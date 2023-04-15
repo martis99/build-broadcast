@@ -1,0 +1,25 @@
+name: Broadcast
+
+on:
+  repository_dispatch:
+    types: [artifact_uploaded]
+
+jobs:
+  Broadcast:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      
+    - name: Download
+      run: |
+        wget -q ${{github.event.client_payload.url}}
+        unzip ${{github.event.client_payload.name}}.zip
+      
+    - name: Save
+      run: |
+        git config --global user.email ""
+        git config --global user.name "GitHub Actions"
+        git add .
+        git commit -m "build: update"
+        git push
