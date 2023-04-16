@@ -50,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: [build]
+        repo: [build, cutils]
 
     steps:
     - name: Notify
