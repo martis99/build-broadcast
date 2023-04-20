@@ -1,4 +1,4 @@
-name: Broadcast
+name: broadcast
 
 on:
   repository_dispatch:
@@ -8,43 +8,10 @@ permissions:
   contents: write
 
 jobs:
-  Save:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-      with:
-        token: ${{secrets.PAT}}
-
-    - name: Download
-      uses: actions/github-script@v6
-      env:
-        REPO: ${{github.event.client_payload.repo}}
-        ARTIFACTS: ${{github.event.client_payload.artifacts}}
-      with:
-        script: |
-          const { promises: fs } = require('fs');
-          await Promise.all(process.env.ARTIFACTS.split(' ').map(async (artifact_id, i) =>
-            fs.writeFile(`${process.env.GITHUB_WORKSPACE}/download${i}.zip`, Buffer.from((await github.rest.actions.downloadArtifact({
-              owner: process.env.REPO.split('/')[0],
-              repo: process.env.REPO.split('/')[1],
-              artifact_id,
-              archive_format: 'zip',
-            })).data))
-          ));
-
-    - name: Unzip
-      run: |
-        unzip -o 'download*.zip'
-        rm download*.zip
-        [ -a build-linux ] && chmod +x build-linux
-
-    - name: Commit
-      run: |
-        git config --global user.email ""
-        git config --global user.name "GitHub Actions"
-        git add . && git diff --staged --quiet || git commit -m "update"
-        git push
+  Update:
+    uses: martis99/build/.github/workflows/build_update.yml@main
+    with:
+      run_id: ${{github.event.client_payload.run_id}}
 
   Broadcast:
     runs-on: ubuntu-latest
@@ -53,10 +20,16 @@ jobs:
         repo: [build, cutils]
 
     steps:
-    - name: Notify
-      uses: peter-evans/repository-dispatch@v2
-      with:
-        token: ${{secrets.PAT}}
-        repository: ${{github.repository_owner}}/${{matrix.repo}}
-        event-type: build_update
-        client-payload: '{"repo": "${{github.event.client_payload.repo}}", "artifacts": "${{github.event.client_payload.artifacts}}"}'
+      - name: Notify
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.repos.createDispatchEvent({
+              owner: 'martis99',
+              repo: "${{matrix.repo}}",
+              event_type: 'build_update',
+              client_payload: {
+                run_id: "${{github.run_id}}"
+              }
+            });
+          github-token: ${{secrets.PAT}}
