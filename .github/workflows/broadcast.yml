@@ -29,7 +29,7 @@ jobs:
               repo: "${{matrix.repo}}",
               event_type: 'build_update',
               client_payload: {
-                run_id: "${{github.run_id}}"
+                run_id: "${{github.event.client_payload.run_id}}"
               }
             });
           github-token: ${{secrets.PAT}}
