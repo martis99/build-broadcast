@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        repo: [build, cutils]
+        repo: [cplatform, cutils, build]
 
     steps:
       - name: Notify
